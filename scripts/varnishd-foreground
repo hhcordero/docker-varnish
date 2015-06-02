@@ -1,0 +1,17 @@
+#!/bin/bash
+set -e
+
+# Set backend host and port 
+sed -i "s/.host \= \"127.0.0.1\"/.host \= \"$BACKEND_PORT_8080_TCP_ADDR\"/g" $VARNISHD_CONFIG
+sed -i "s/.port \= \"8080\"/.port \= \"$BACKEND_PORT_8080_TCP_PORT\"/g" $VARNISHD_CONFIG
+
+# Find container ip
+container_ip=$(awk 'NR==1 {print $1}' /etc/hosts)
+
+exec varnishd -F \
+    -f $VARNISHD_CONFIG \
+    -u $VARNISHD_USER \
+    -s malloc,$VARNISHD_CACHE_SIZE \
+    -a 0.0.0.0:$VARNISHD_PORT \
+    -T $container_ip:$VARNISHD_ADMIN_PORT \
+    $VARNISHD_PARAMS
